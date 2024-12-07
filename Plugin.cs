@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace Solarint.GrenadeIndicator
 {
-    [BepInPlugin("solarint.grenadeIndicator", "Grenade Indicator", "1.0.0")]
+    [BepInPlugin("solarint.grenadeIndicator", "Grenade Indicator", "1.0.2")]
     public class Plugin : BaseUnityPlugin
     {
         private void Awake()
@@ -156,6 +156,8 @@ namespace Solarint.GrenadeIndicator
         public Grenade Grenade { get; private set; }
         private float Distance;
         private Vector3 Position;
+        private float _expireTime;
+        private const float ExpireTimeoutDuration = 10f;
 
         private Camera _camera = Camera.main;
 
@@ -163,8 +165,10 @@ namespace Solarint.GrenadeIndicator
 
         private void Awake()
         {
+            _expireTime = Time.time + ExpireTimeoutDuration;
             Grenade = this.GetComponent<Grenade>();
             _indicator = DebugGizmos.CreateLabel(Grenade.transform.position, "[!]", DefaultStyle, 1f);
+            _indicator.Enabled = false;
 
             if (Settings.TrailEnabled.Value) {
                 _trailRenderer = this.gameObject.AddComponent<TrailRenderer>();
@@ -193,6 +197,10 @@ namespace Solarint.GrenadeIndicator
 
         private void Update()
         {
+            if (_expireTime < Time.time) {
+                Dispose();
+                return;
+            }
             if (Grenade == null || Grenade.transform == null) return;
 
             Position = Grenade.transform.position;
